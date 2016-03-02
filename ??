@@ -1,0 +1,83 @@
+package fi.omapizzeria.admin.controller;
+
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionEvent;
+
+import dao.PizzaDAO;
+import fi.omapizzeria.admin.bean.Pizza;
+
+@WebServlet("/controller")
+public class ControllerServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+
+	public ControllerServlet() {
+
+	}
+
+	protected void doGet(HttpServletRequest request,
+			HttpServletResponse response) throws ServletException, IOException {
+		response.setContentType("text/html");
+		java.io.PrintWriter wout = response.getWriter();
+
+		// tietokannasta pizzat
+		PizzaDAO pDao = new PizzaDAO();
+
+		pDao.avaaYhteys();
+
+		List<Pizza> lista = null;
+		lista = pDao.haePizzat();
+		for (int i = 0; i < lista.size(); i++) {
+			wout.print(lista.get(i));
+		}
+		wout.close();
+		pDao.suljeYhteys();
+		// requestiin talteen
+		request.setAttribute("pizzat", lista);
+
+		Date aloitusaika = new Date();
+		HttpSession sessio = request.getSession();
+		sessio.setAttribute("kello", aloitusaika);
+
+		// tallennetaan luotu olio requestin atribuutiksi
+		request.setAttribute("pizzat", lista);
+		// Pyynnön ohjaus list.jsp
+		request.getRequestDispatcher("list.jsp").forward(request, response);
+	}
+
+	protected void doPost(HttpServletRequest request,
+			HttpServletResponse response) throws ServletException, IOException {
+		response.setContentType("text/html");
+
+		java.io.PrintWriter wout = response.getWriter();
+
+		// Luetaan HTML-Lomakkeelle täytetyt tiedot
+
+		String Nimi = request.getParameter("nimi");
+		String Hinta = request.getParameter("hinta");
+		double Hinta1 = Double.parseDouble(Hinta);
+		Pizza pizza = new Pizza(1, Nimi, Hinta1);
+		DecimalFormat f = new DecimalFormat("0.00");
+
+		System.out.println("<p>");
+		System.out.println("<b>" + pizza.getNimi() + "</b>");
+		System.out.println("<br/>");
+		System.out.println("Hinta: " + f.format(pizza.getHinta())
+				+ " EUR");
+		System.out.println("</p>");
+
+		response.sendRedirect("/PizzeriaAdmin/controller?added=true");
+
+	}
+}
